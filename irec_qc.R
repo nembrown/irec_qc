@@ -124,10 +124,10 @@ all_sav_combo_small<-all_sav_combo %>% select(Licence_ID, REPYEAR, REPMONTH, REP
 
 write.csv(all_sav_combo_small, "Output/all_sav_combo_small.csv", row.names = FALSE)
 
+View(all_sav_combo)
 
 #Start with all_sav, the alternative to irec_raw, has day
 all_sav<- all_sav_combo %>% filter(Licence_ID %notin% c(999997, 999998, 999999)) %>%#remove Anne and Rob's test licences
-                            filter(AMAIL %notin% c("mike.d.murphy@dfo-mpo.gc.ca", "vivian.chow@dfo-mpo.gc.ca")) %>% #remove fake dfo emails unclear if test? 
                       select(Licence_ID, REPYEAR, REPMONTH, REPDAY, REPZONE, REPMETHOD, AJUVEPRES,
                              ASALMON_CHINOOK_HATCH_KEPT, ASALMON_CHINOOK_HATCH_RELE, 
                              ASALMON_CHINOOK_WILD_KEPT, ASALMON_CHINOOK_WILD_RELE, 
