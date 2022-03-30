@@ -124,8 +124,6 @@ all_sav_combo_small<-all_sav_combo %>% select(Licence_ID, REPYEAR, REPMONTH, REP
 
 write.csv(all_sav_combo_small, "Output/all_sav_combo_small.csv", row.names = FALSE)
 
-View(all_sav_combo)
-
 #Start with all_sav, the alternative to irec_raw, has day
 all_sav<- all_sav_combo %>% filter(Licence_ID %notin% c(999997, 999998, 999999)) %>%#remove Anne and Rob's test licences
                       select(Licence_ID, REPYEAR, REPMONTH, REPDAY, REPZONE, REPMETHOD, AJUVEPRES,
@@ -417,6 +415,11 @@ irec_raw_combined<- irec_raw_combined %>%
 irec_raw_combined$region<- factor(irec_raw_combined$region, levels = c("West Coast Vancouver Island","Johnstone Strait", "Georgia Strait", "Juan de Fuca", "Central BC" , "Northern BC"), ordered = TRUE)
 irec_raw_combined<-irec_raw_combined %>% unite("id_day", c(licence.id, year, month, day), remove=FALSE) %>% 
                                          #unite("id_area", c(licence.id, year, month, day, area), remove=FALSE) %>% 
+                                         #unite("id_month", c(licence.id, year, month), remove=FALSE) %>% 
+                                         mutate(fishing_year = case_when(
+                                                month %in% c(1,2,3) ~ paste(irec_raw_combined$year - 1, irec_raw_combined$year, sep = "-"),
+                                                month %in% c(4:12) ~ paste(irec_raw_combined$year, irec_raw_combined$year + 1, sep = "-"))) %>% 
+                                         unite("id_fishyear", c(licence.id, fishing_year), remove=FALSE) %>% 
                                          relocate(c(guided, lodge), .after=juveniles) 
 
 # Plotting ----------------------------------------------------------------
@@ -532,17 +535,23 @@ total_investigate <- Reduce(merge.all, DataList_total)
 total_investigate <-total_investigate %>% select(-id_ignore) %>% as_tibble()
 
 # Issue 4 - Kept by licence holder per day (across areas & methods, not already included in Issue 1)
-licence_day_kept<-irec_raw_combined %>% group_by(licence.id, year, month, day, id_day) %>%  dplyr::summarise(across(salmon_chinook_hatch_kept:total_caught_pp, sum)) %>%  filter(total_kept_pp>4) %>% arrange(desc(total_kept_pp))  %>% filter(id_day %notin% kept_high$id_day) %>% add_column(flag_category = "Kept per day over 4") %>% relocate(flag_category)
+licence_day_kept<-irec_raw_combined %>% group_by(licence.id, fishing_year, id_fishyear, year, month, day, id_day) %>%  dplyr::summarise(across(salmon_chinook_hatch_kept:total_caught_pp, sum)) %>%  filter(total_kept_pp>4) %>% arrange(desc(total_kept_pp))  %>% filter(id_day %notin% kept_high$id_day) %>% add_column(flag_category = "Kept per day over 4") %>% relocate(flag_category)
 
 # Issue 5 - Released by licence holder per day (across areas & methods, licences not already included in Issue 2)
-licence_day_released<-irec_raw_combined %>% group_by(licence.id, year, month, day, id_day) %>%  dplyr::summarise(across(salmon_chinook_hatch_kept:total_caught_pp, sum)) %>%  filter(total_released_pp>20) %>% arrange(desc(total_released_pp))  %>% filter(id_day %notin% released_high$id_day)%>% add_column(flag_category = "Released per day over 20") %>% relocate(flag_category)
+licence_day_released<-irec_raw_combined %>% group_by(licence.id, fishing_year, id_fishyear, year, month, day, id_day) %>%  dplyr::summarise(across(salmon_chinook_hatch_kept:total_caught_pp, sum)) %>%  filter(total_released_pp>20) %>% arrange(desc(total_released_pp))  %>% filter(id_day %notin% released_high$id_day)%>% add_column(flag_category = "Released per day over 20") %>% relocate(flag_category)
 
 # Issue 6 - Total caught by licence holder per day (across areas & methods, licences not already included in Issue 3)
-licence_day_total<-irec_raw_combined%>% group_by(licence.id, year, month, day, id_day) %>%  dplyr::summarise(across(salmon_chinook_hatch_kept:total_caught_pp, sum)) %>%  filter(total_caught_pp>20) %>% arrange(desc(total_caught_pp))  %>% filter(id_day %notin% c(total_high$id_day, released_high$id_day, kept_high$id_day))%>% add_column(flag_category = "Total caught per day over 20") %>% relocate(flag_category)
-licence_day_total
+licence_day_total<-irec_raw_combined%>% group_by(licence.id, fishing_year, id_fishyear, year, month, day, id_day) %>%  dplyr::summarise(across(salmon_chinook_hatch_kept:total_caught_pp, sum)) %>%  filter(total_caught_pp>20) %>% arrange(desc(total_caught_pp))  %>% filter(id_day %notin% c(total_high$id_day, released_high$id_day, kept_high$id_day))%>% add_column(flag_category = "Total caught per day over 20") %>% relocate(flag_category)
+
+# Issue 7 - Kept by licence holder per fishing year (across areas & methods, not already included in Issue 1)
+licence_fishyear_kept_30<-irec_raw_combined %>% group_by(licence.id, fishing_year, id_fishyear) %>%  dplyr::summarise(across(salmon_chinook_hatch_kept:total_caught_pp, sum)) %>%  filter(fishing_year %in% c("2013-2014", "2014-2015", "2015-2016", "2016-2017", "2017-2018", "2018-2019") , total_kept_pp>30, licence.id %notin% kept_high$licence.id) %>% arrange(desc(total_kept_pp)) %>% add_column(flag_category = "Kept per year over 30") %>% relocate(flag_category)
+licence_fishyear_kept_10<-irec_raw_combined %>% group_by(licence.id, fishing_year, id_fishyear) %>%  dplyr::summarise(across(salmon_chinook_hatch_kept:total_caught_pp, sum)) %>%  filter(fishing_year %notin% c("2013-2014", "2014-2015", "2015-2016", "2016-2017", "2017-2018", "2018-2019"), total_kept_pp>10, licence.id %notin% kept_high$licence.id) %>% arrange(desc(total_kept_pp)) %>% add_column(flag_category = "Kept per year over 10") %>% relocate(flag_category)
 
 #Issue 0 
-full_list_remove<-bind_rows(kept_high, released_high, total_high, licence_day_kept, licence_day_released, licence_day_total) %>% arrange(year, month, day, licence.id, area)
+full_list_remove<-bind_rows(kept_high, released_high, total_high, licence_day_kept, licence_day_released, licence_day_total, licence_fishyear_kept_30, licence_fishyear_kept_10) %>% arrange(fishing_year, month, day)
+
+#Issue 0.1
+unq_licences_flagged <- full_list_remove %>% select(id_fishyear, licence.id, fishing_year, flag_category) %>% arrange(flag_category) %>%  add_column(value = 1) %>% pivot_wider(names_from = flag_category, values_from = value, values_fn = sum) %>% arrange(fishing_year, across(where(is.double), desc))
 
 #Summary table
 explore_summary_irec <- data.frame(Issue_ID=character(), Issue=character(), Count=integer(),
@@ -550,7 +559,8 @@ explore_summary_irec <- data.frame(Issue_ID=character(), Issue=character(), Coun
                               stringsAsFactors=FALSE)
 
 explore_summary_irec <- explore_summary_irec  %>% 
-  add_row(Issue_ID="0", Issue="Full list to remove", Count=nrow(full_list_remove), Definition="Full list of flagged data") %>% 
+  add_row(Issue_ID="0", Issue="Full list flagged", Count=nrow(full_list_remove), Definition="Full list of flagged data") %>% 
+  add_row(Issue_ID="0.1", Issue="Unique licences flagged", Count=nrow(unq_licences_flagged), Definition="Licences with flagged data") %>% 
   add_row(Issue_ID="1", Issue="High # Kept", Count=nrow(kept_high), Definition="Number of total chinook kept per person is over 4") %>% 
   add_row(Issue_ID="1.1", Issue="High # Kept summaries", Count=nrow(kept_high), Definition="Number of total chinook kept per person is over 4, summarized by area, year, guide, lodge, and juveniles") %>% 
   add_row(Issue_ID="2", Issue="High # Total Released", Count=nrow(released_high), Definition="Number of total chinook released (sublegal, legal, and unknown) per person is over 20") %>% 
@@ -561,10 +571,12 @@ explore_summary_irec <- explore_summary_irec  %>%
   add_row(Issue_ID="3.1", Issue="High # Caught summaries", Count=nrow(total_high), Definition="Number of total chinook caught per person is over 20, summarized by area, year, guide, lodge, and juveniles") %>% 
   add_row(Issue_ID="4", Issue="Licence/day kept", Count=nrow(licence_day_kept), Definition="Number of kept chinook caught per person per day is over 4, regardless of area and method") %>% 
   add_row(Issue_ID="5", Issue="Licence/day released", Count=nrow(licence_day_released), Definition="Number of released chinook caught per person per day is over 20, regardless of area and method") %>% 
-  add_row(Issue_ID="6", Issue="Licence/day total", Count=nrow(licence_day_total), Definition="Number of total chinook caught per person per day is over 20, regardless of area and method") 
-  
+  add_row(Issue_ID="6", Issue="Licence/day total", Count=nrow(licence_day_total), Definition="Number of total chinook caught per person per day is over 20, regardless of area and method") %>% 
+  add_row(Issue_ID="7", Issue="Licence/year kept", Count=nrow(licence_fishyear_kept_10), Definition="Number of total chinook kept per person per year, regardless of area and method") 
+
 sheet_list_irec<-list(Summary=explore_summary_irec,
                  "0 - Full list to remove" = full_list_remove,
+                 "0.1 - Unq licences flagged"= unq_licences_flagged,
                  "1 - High_Kept"=kept_high,
                  "1.1 - High_Kept_sum"=kept_investigate,
                  "2 - High_Released"=released_high,
@@ -575,7 +587,8 @@ sheet_list_irec<-list(Summary=explore_summary_irec,
                  "3.1 - High_Caught_sum" = total_investigate,
                  "4 - Licence_day kept" = licence_day_kept, 
                  "5 - Licence_day released" = licence_day_released, 
-                 "6 - Licence_day total" = licence_day_total
+                 "6 - Licence_day total" = licence_day_total, 
+                 "7 - Licence_year kept" = licence_fishyear_kept_10
                  )
 
 st=format(Sys.time(), "%Y-%m-%d_%H%M")
