@@ -22,6 +22,18 @@ irec_raw2 <- read.csv(here::here("data/chinook responses_sheet2.csv"))%>% as_tib
 irec_raw3 <- read.csv(here::here("data/chinook responses_sheet3.csv"))%>% as_tibble()
   
 ###### alternative data to irec_raw, which has dates by day not just month, but only starts 2013 april
+#201213
+January_201213_sav<-read_sav(here::here("data/EKOS SAV 201213/01512FULL - January 1-31 Complete Data set.sav"))
+February_201213_sav<-read_sav(here::here("data/EKOS SAV 201213/01512FULL - February 1-28 Complete Data set.sav"))
+March_201213_sav<-read_sav(here::here("data/EKOS SAV 201213/01512FULL - March 1-31 Complete Data set.sav"))
+July_201213_sav<-read_sav(here::here("data/EKOS SAV 201213/01512FULL - July 1-31 2012 Complete Data set_v2.sav"))
+August_201213_sav<-read_sav(here::here("data/EKOS SAV 201213/01512FULL - August 1-31 Complete Data set.sav"))
+September_201213_sav<-read_sav(here::here("data/EKOS SAV 201213/01512FULL - September 1-30 2012 Complete Data set_v2.sav"))
+October_201213_sav<-read_sav(here::here("data/EKOS SAV 201213/01512FULL - October 1-31 Complete Data set.sav"))
+November_201213_sav<-read_sav(here::here("data/EKOS SAV 201213/01512FULL - November 1-30 Complete Data set.sav"))
+December_201213_sav<-read_sav(here::here("data/EKOS SAV 201213/01512FULL - December 1-31 Complete Data set.sav"))
+
+
 #201314
 January_201314_sav<-read_sav(here::here("data/EKOS SAV 201314/01512FULL - January 1-31 Complete Data set.sav"))
 February_201314_sav<-read_sav(here::here("data/EKOS SAV 201314/01512FULL - February 1-28 Complete Data set.sav"))
@@ -68,12 +80,13 @@ April_201516_sav$Licence_ID<-as.double(April_201516_sav$Licence_ID)
 May_201516_sav$Licence_ID<-as.double(May_201516_sav$Licence_ID)
 June_201516_sav$Licence_ID<-as.double(June_201516_sav$Licence_ID)
 
-
+all_201213_sav<-bind_rows(January_201213_sav, February_201213_sav, March_201213_sav, July_201213_sav, August_201213_sav, September_201213_sav, October_201213_sav, November_201213_sav, December_201213_sav) 
 all_201314_sav<-bind_rows(January_201314_sav, February_201314_sav, March_201314_sav, April_201314_sav, May_201314_sav, June_201314_sav, July_201314_sav, August_201314_sav, September_201314_sav, October_201314_sav, November_201314_sav, December_201314_sav) 
 all_201415_sav<- bind_rows(January_201415_sav, February_201415_sav, March_201415_sav, April_201415_sav, May_201415_sav, June_201415_sav, July_201415_sav, August_201415_sav, September_201415_sav, October_201415_sav, November_201415_sav, December_201415_sav) 
 all_201516_sav<- bind_rows(April_201516_sav, May_201516_sav, June_201516_sav)
 
-all_sav_combo<-bind_rows(January_201314_sav, February_201314_sav, March_201314_sav, April_201314_sav, May_201314_sav, June_201314_sav, July_201314_sav, August_201314_sav, September_201314_sav, October_201314_sav, November_201314_sav, December_201314_sav, 
+all_sav_combo<-bind_rows(January_201213_sav, February_201213_sav, March_201213_sav, July_201213_sav, August_201213_sav, September_201213_sav, October_201213_sav, November_201213_sav, December_201213_sav, 
+                   January_201314_sav, February_201314_sav, March_201314_sav, April_201314_sav, May_201314_sav, June_201314_sav, July_201314_sav, August_201314_sav, September_201314_sav, October_201314_sav, November_201314_sav, December_201314_sav, 
                    January_201415_sav, February_201415_sav, March_201415_sav, April_201415_sav, May_201415_sav, June_201415_sav, July_201415_sav, August_201415_sav, September_201415_sav, October_201415_sav, November_201415_sav, December_201415_sav, 
                    April_201516_sav, May_201516_sav, June_201516_sav)
 
@@ -99,14 +112,7 @@ irec_raw<- irec_raw %>%  select(-day) %>%
                                              across(c(year, month, juveniles, salmon_chinook_hatch_kept,salmon_chinook_hatch_rele,
                                                       salmon_chinook_wild_kept, salmon_chinook_wild_rele, salmon_chinook_unk_kept,
                                                       salmon_chinook_unk_rele, salmon_chinook_subl_rele, total.chinook.caught), as.numeric), 
-                                             across(c(licence.id), as.character),
-                                             ekos = case_when(
-                                               year == 2012 ~ "no_ekos", 
-                                               year == 2013 & month < 4 ~ "no_ekos",
-                                               TRUE ~ "ekos")
-                                              ) %>% 
-                        filter(ekos == "ekos") %>% 
-                        select(-ekos) 
+                                             across(c(licence.id), as.character))
                                           
 irec_raw$salmon_chinook_us_hatchery_kept<-0
 irec_raw$salmon_chinook_us_hatchery_rele<-0
@@ -115,7 +121,7 @@ irec_raw$salmon_chinook_us_wild_rele<-0
 irec_raw$salmon_chinook_us_unkown_kept<-0
 irec_raw$salmon_chinook_us_unkown_rele<-0
 
-#16350 rows
+#98230 rows
 all_sav_combo_small<-all_sav_combo %>% select(Licence_ID, REPYEAR, REPMONTH, REPDAY, REPZONE, REPMETHOD, AJUVEPRES,
                                                            ASALMON_CHINOOK_HATCH_KEPT, ASALMON_CHINOOK_HATCH_RELE, 
                                                            ASALMON_CHINOOK_WILD_KEPT, ASALMON_CHINOOK_WILD_RELE, 
@@ -124,8 +130,10 @@ all_sav_combo_small<-all_sav_combo %>% select(Licence_ID, REPYEAR, REPMONTH, REP
 
 write.csv(all_sav_combo_small, "Output/all_sav_combo_small.csv", row.names = FALSE)
 
+
+View(all_sav_combo)
 #Start with all_sav, the alternative to irec_raw, has day
-all_sav<- all_sav_combo %>% filter(Licence_ID %notin% c(999997, 999998, 999999)) %>%#remove Anne and Rob's test licences
+all_sav<- all_sav_combo %>% filter(Licence_ID %notin% c(999997, 999998, 999999, 77777)) %>%#remove Anne and Rob's test licences
                       select(Licence_ID, REPYEAR, REPMONTH, REPDAY, REPZONE, REPMETHOD, AJUVEPRES,
                              ASALMON_CHINOOK_HATCH_KEPT, ASALMON_CHINOOK_HATCH_RELE, 
                              ASALMON_CHINOOK_WILD_KEPT, ASALMON_CHINOOK_WILD_RELE, 
@@ -238,16 +246,16 @@ all_sav<- all_sav %>% mutate(total.chinook.caught = rowSums(select(., contains("
 #check same columns before combining 
 janitor::compare_df_cols(irec_raw, all_sav)
 
-#in all_sav_join but not irec_raw: 6 - with licence as NA, done of these are in irec_raw
+#in all_sav_join but not irec_raw: 6 - with licence as NA, none of these are in irec_raw
 ekos_not_irec<- anti_join(all_sav, irec_raw ) 
 
-#32 in irec but not in the ekos sav data
+#33 in irec but not in the ekos sav data
 irec_not_ekos<-anti_join(irec_raw, all_sav) 
 
 write.csv(ekos_not_irec, "Output/ekos_not_irec.csv", row.names = FALSE)
 write.csv(irec_not_ekos, "Output/irec_not_ekos.csv", row.names = FALSE)
 
-#irec_raw1 has 16,318 (6 are not in irec_raw), this removes the 32 ... but we don't have day for those anyway, 20 of them have more than 20 fish caught per day so would get filted out anyway. 
+#irec_raw1 has 17,324 (6 are not in irec_raw), this removes the 32 ... but we don't have day for those anyway, 20 of them have more than 20 fish caught per day so would get filtered out anyway. 
 irec_raw1<-semi_join(all_sav, irec_raw) %>% relocate(day, .after=month) 
 
 # Formatting 2015 to present data --------------------------------------------------------
